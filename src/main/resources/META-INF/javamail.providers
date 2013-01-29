@@ -1,0 +1,1 @@
+protocol=maildir; type=store; class=de.bernitt.scalamaildir.MaildirJavaMailStore; vendor=Folker Bernitt;
