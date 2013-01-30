@@ -234,8 +234,6 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
   }
 
   private def readMessagesIn(dir: File, startMsgNum: Int): Array[MaildirMessage] = {
-    println("files in " + dir.getAbsolutePath)
-    println(dir.listFiles())
     val files = dir.listFiles().toList
 
     var msgNum = startMsgNum
