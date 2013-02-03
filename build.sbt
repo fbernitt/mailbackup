@@ -1,3 +1,5 @@
+import AssemblyKeys._
+
 name := "mailbackup"
 
 version := "1.0"
@@ -14,4 +16,7 @@ libraryDependencies += "org.scala-tools.testing" % "specs_2.10" % "1.6.9" % "tes
 
 libraryDependencies += "org.mockito" % "mockito-all" % "1.8.5" % "test"
 
+assemblySettings
+
+mainClass in assembly := Some("de.bernitt.mailbackup.Main")
 
