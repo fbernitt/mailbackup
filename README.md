@@ -9,6 +9,13 @@ Maildir
 -------
 [Wikipedia Maildir](http://en.wikipedia.org/wiki/Maildir)
 
+Compile
+-------
+
+To build this project you need [sbt, a scale build tool](https://github.com/sbt/sbt).
+
+    sbt clean assembly
+
 Usage
 -----
 Not yet implemented.

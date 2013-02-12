@@ -20,3 +20,5 @@ assemblySettings
 
 mainClass in assembly := Some("de.bernitt.mailbackup.Main")
 
+assembly <<= assembly.dependsOn (copyShell in (Compile, packageBin))
+

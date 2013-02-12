@@ -6,7 +6,6 @@ import javax.mail.{Session, URLName}
 import java.util.Properties
 
 class Conf(args: Seq[String]) extends ScallopConf(args) {
-  val foo = opt[Boolean]("dryRun")
   val dryRun = toggle("dryRun", short = 'n', default = Some(false))
   val help = toggle("help", default = Some(false), descrYes = "Show this help")
   val imap = trailArg[String]("imap", required = true)
