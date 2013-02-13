@@ -21,27 +21,36 @@ import java.util.Properties
 import java.io.File
 
 object MaildirJavaMailStore {
+  val MaildirUrlPrefix = "maildir:///"
+  val AutoCreateProperty = "mail.store.maildir.autocreate"
+  val NoAutoCreate = false
+
   def createSession(autoCreate: Boolean): Session = {
     val props = new Properties()
-    props.put("mail.store.maildir.autocreatedir", autoCreate.asInstanceOf[Object])
+    props.put(AutoCreateProperty, autoCreate.toString)
     Session.getInstance(props)
   }
 
-  def fileToUrlName(file: File) = new URLName("maildir:///" + file.getAbsolutePath)
+  def fileToUrlName(file: File) = new URLName(MaildirUrlPrefix + file.getAbsolutePath)
 }
 
 class MaildirJavaMailStore(session: Session, urlName: URLName) extends Store(session, urlName) {
 
-  def this(file: File) = this(MaildirJavaMailStore.createSession(false), MaildirJavaMailStore.fileToUrlName(file))
+  def this(file: File) = this(MaildirJavaMailStore.createSession(MaildirJavaMailStore.NoAutoCreate), MaildirJavaMailStore.fileToUrlName(file))
 
   def this(file: File, autoCreate: Boolean) = this(MaildirJavaMailStore.createSession(autoCreate), MaildirJavaMailStore.fileToUrlName(file))
 
+  if (isAutoCreate) {
+    getFolder("INBOX").create(Folder.HOLDS_MESSAGES)
+  }
 
-  override def getDefaultFolder: Folder = null
+  override def getDefaultFolder: Folder = MaildirFolder.defaultFolder(this)
 
   override def getFolder(name: String): Folder = new MaildirFolder(name, this)
 
-  override def getFolder(p1: URLName): Folder = null
+  override def getFolder(url: URLName): Folder = new MaildirFolder(url.getFile, this)
 
   def maildirRoot = new File(urlName.getFile)
+
+  private def isAutoCreate = session.getProperties.getProperty(MaildirJavaMailStore.AutoCreateProperty, "false").toBoolean
 }
