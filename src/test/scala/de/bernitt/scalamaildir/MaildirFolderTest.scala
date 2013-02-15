@@ -26,45 +26,7 @@ import javax.mail.{Session, FolderNotFoundException, Folder}
 import javax.mail.internet.MimeMessage
 import java.util.Properties
 import javax.mail.Flags.Flag
-
-trait TemporaryDirectory extends BeforeAndAfterEach {
-  this: Suite =>
-
-  protected val tempDir = createTemporaryDirectory()
-
-  override def beforeEach() {
-    tempDir.mkdir()
-    if (!tempDir.exists() || !tempDir.isDirectory)
-      throw new RuntimeException("Failed to create temporary dir " + tempDir.getAbsolutePath)
-    super.beforeEach()
-  }
-
-  override def afterEach() {
-    deleteDirectory(tempDir)
-    if (tempDir.exists()) throw new RuntimeException("Failed to delete temp dir " + tempDir.getAbsolutePath)
-    super.afterEach()
-  }
-
-  private def createTemporaryDirectory(): File = {
-    val file = File.createTempFile("test", "dir")
-    file.delete()
-    file
-  }
-
-  private def deleteDirectory(dir: File): Boolean = {
-    if (dir.exists()) {
-      dir.listFiles().foreach {
-        path =>
-          if (path.isDirectory) {
-            deleteDirectory(path)
-          } else {
-            path.delete()
-          }
-      }
-    }
-    dir.delete()
-  }
-}
+import util.TemporaryDirectory
 
 class MaildirFolderTest extends FlatSpec with ShouldMatchers with BeforeAndAfterEach with TemporaryDirectory with MockitoSugar {
 
