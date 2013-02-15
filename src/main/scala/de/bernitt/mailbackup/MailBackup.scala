@@ -1,7 +1,6 @@
 package de.bernitt.mailbackup
 
-import javax.mail.{Message, FetchProfile, Folder, Store}
-import collection.mutable.ArrayBuffer
+import javax.mail.{Message, Folder, Store}
 
 
 object MailBackup {
@@ -35,7 +34,10 @@ class MailBackup(srcStore: Store, dstStore: Store, dryRun: Boolean = false) {
       val missingMsgIds = missingMessageIds(dstFolder, srcFolder)
       if (messagesForBackup(missingMsgIds)) {
         val missingMsgs = extractMissingMessages(srcFolder.getMessages, missingMsgIds)
-        backupMessages(missingMsgs, dstFolder)
+        if (!dryRun)
+          backupMessages(missingMsgs, dstFolder)
+        else
+          listMessageSubjects(missingMsgs)
       }
     } finally {
       srcFolder.close(false)
@@ -51,9 +53,12 @@ class MailBackup(srcStore: Store, dstStore: Store, dryRun: Boolean = false) {
 
     for (chunk <- chunks) {
       dstFolder.appendMessages(chunk)
-
     }
     vprintln("done")
+  }
+
+  private def listMessageSubjects(messages: Array[Message]) {
+    messages.foreach(msg => println(msg.getSubject))
   }
 
   private def messagesForBackup(missingMsgIds: Set[String]): Boolean = {
@@ -78,25 +83,7 @@ class MailBackup(srcStore: Store, dstStore: Store, dryRun: Boolean = false) {
   }
 
   private def messageIdsOf(folder: Folder): Set[String] = {
-    val msgs = folder.getMessages
-
-    prefetchMessageIds(folder, msgs)
-
-    val msgIds = new ArrayBuffer[String]()
-
-    for (msg <- msgs) {
-      val id: String = msg.firstHeader(MailBackup.MessageIdHeader)
-
-      msgIds += id
-    }
-
-    msgIds.toArray.toSet
-  }
-
-  private def prefetchMessageIds(folder: Folder, msgs: Array[Message]) {
-    val fetchProfile = new FetchProfile()
-    fetchProfile.add(MailBackup.MessageIdHeader)
-    folder.fetch(msgs, fetchProfile)
+    new FolderMessageIdFetcher(folder).messageIds.toSet
   }
 
   private def folders: Array[Folder] = srcStore.getDefaultFolder.list(MailBackup.AllFoldersPattern)
