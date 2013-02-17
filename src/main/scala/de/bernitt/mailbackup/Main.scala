@@ -36,7 +36,7 @@ object Main {
   }
 
   private def createImapStore(imapUrl: URLName) = {
-    val store = defaultSession.getStore("imap")
+    val store = defaultSession.getStore(imapUrl.getProtocol)
     val password = System.console().readPassword("IMAP Password:").mkString
     store.connect(imapUrl.getHost, imapUrl.getUsername, password)
     store
