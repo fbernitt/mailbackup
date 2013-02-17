@@ -25,23 +25,27 @@ class MailBackup(srcStore: Store, dstStore: Store, dryRun: Boolean = false) {
   }
 
   private def backupFolder(srcFolder: Folder) {
-    val dstFolder = createDstFolder(srcFolder.getFullName)
-
     try {
-      srcFolder.open(Folder.READ_ONLY)
-      dstFolder.open(Folder.READ_WRITE)
+      srcFolder.open(Folder.READ_ONLY) // first open src folder, as it might be impossible (i.e. some googlemail folders)
 
-      val missingMsgIds = missingMessageIds(dstFolder, srcFolder)
-      if (messagesForBackup(missingMsgIds)) {
-        val missingMsgs = extractMissingMessages(srcFolder.getMessages, missingMsgIds)
-        if (!dryRun)
-          backupMessages(missingMsgs, dstFolder)
-        else
-          listMessageSubjects(missingMsgs)
+      val dstFolder = createDstFolder(srcFolder.getFullName)
+
+      dstFolder.open(Folder.READ_WRITE)
+      try {
+        val missingMsgIds = missingMessageIds(dstFolder, srcFolder)
+        if (messagesForBackup(missingMsgIds)) {
+          val missingMsgs = extractMissingMessages(srcFolder.getMessages, missingMsgIds)
+          if (!dryRun)
+            backupMessages(missingMsgs, dstFolder)
+          else
+            listMessageSubjects(missingMsgs)
+        }
+      } finally {
+        srcFolder.close(false)
+        dstFolder.close(false)
       }
-    } finally {
-      srcFolder.close(false)
-      dstFolder.close(false)
+    } catch {
+      case e: Exception => println("Failed to backup " + srcFolder.getFullName + ":"); e.printStackTrace()
     }
   }
 

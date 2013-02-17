@@ -19,9 +19,9 @@ package de.bernitt.mailbackup
 import org.scalatest.{BeforeAndAfterEach, FlatSpec}
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.mock.MockitoSugar
-import javax.mail.{Message, Folder, Store}
+import javax.mail.{MessagingException, Message, Folder, Store}
 import org.mockito.Mockito._
-import org.mockito.Matchers.{eq => the, any}
+import org.mockito.Matchers.{eq => the, any, anyInt}
 import scala.Array
 
 class MailBackupTest extends FlatSpec with ShouldMatchers with BeforeAndAfterEach with MockitoSugar {
@@ -72,11 +72,22 @@ class MailBackupTest extends FlatSpec with ShouldMatchers with BeforeAndAfterEac
     //when
     new MailBackup(srcStore, dstStore).backup()
 
-
     //then
     verify(dstFolder, never()).create(Folder.HOLDS_FOLDERS | Folder.HOLDS_MESSAGES)
     assertFoldersAreClosedWithoutExpunge()
     assertMessagesAdded(Array(srcMessage))
+  }
+
+  "A MailBackup" should "not create dst folder it's not possible to open src folder" in {
+    //given
+    prepareSingleSourceFolderWithMessages(Array(srcMessage))
+    when(srcFolder.open(anyInt())).thenThrow(new MessagingException("Some error occurred"))
+
+    //when
+    new MailBackup(srcStore, dstStore).backup()
+
+    //then
+    verify(dstFolder, never()).create(anyInt())
   }
 
   "A MailBackup" should "should only add missing messages" in {
@@ -147,6 +158,27 @@ class MailBackupTest extends FlatSpec with ShouldMatchers with BeforeAndAfterEac
     //then
     assertSrcFolderOpenedReadonly()
     assertFoldersAreClosedWithoutExpunge()
+    verify(dstFolder, never()).appendMessages(any())
+    verify(anotherDstFolder).appendMessages(the(Array(srcMessage)))
+  }
+
+  "A MailBackup" should "continue with next folder if exception occurs" in {
+    //given
+    val anotherSrcFolder = mock[Folder]
+    when(anotherSrcFolder.getFullName).thenReturn("anotherFolder")
+    val anotherDstFolder = mock[Folder]
+    when(dstStore.getFolder("anotherFolder")).thenReturn(anotherDstFolder)
+    when(anotherDstFolder.getFullName).thenReturn("anotherFolder")
+    when(anotherSrcFolder.getMessages).thenReturn(Array(srcMessage))
+    when(anotherDstFolder.getMessages).thenReturn(Array[Message]())
+
+    when(srcDefaultFolder.list("*")).thenReturn(Array(srcFolder, anotherSrcFolder))
+    when(srcFolder.open(anyInt())).thenThrow(new MessagingException("Some exception"))
+
+    //when
+    new MailBackup(srcStore, dstStore).backup()
+
+    //then
     verify(dstFolder, never()).appendMessages(any())
     verify(anotherDstFolder).appendMessages(the(Array(srcMessage)))
   }
