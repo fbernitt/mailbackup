@@ -52,5 +52,7 @@ class MaildirJavaMailStore(session: Session, urlName: URLName) extends Store(ses
 
   def maildirRoot = new File(urlName.getFile)
 
+  def sessionProperties = session.getProperties
+
   private def isAutoCreate = session.getProperties.getProperty(MaildirJavaMailStore.AutoCreateProperty, "false").toBoolean
 }

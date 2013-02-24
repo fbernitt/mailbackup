@@ -272,6 +272,44 @@ class MaildirFolderTest extends FlatSpec with ShouldMatchers with BeforeAndAfter
     new File(tempDir, ".foobar/cur/" + msg.name.uniq + ":2,RS").exists() should be(true)
   }
 
+  "A MaildirFolder" should "autorepair folders by recreating tmp/new/cur if folder exists and flag is set" in {
+    val folderFile = new File(tempDir, ".foobar")
+
+    autoRepairTest(folderFile, "true", "foobar", Folder.READ_WRITE)
+
+    Array("new", "tmp", "cur").foreach(new File(folderFile, _).exists() should equal(true))
+  }
+
+  "A MaildirFolder" should "not autorepair folders in readonly mode" in {
+    val folderFile = new File(tempDir, ".foobar")
+
+    autoRepairTest(folderFile, "true", "foobar", Folder.READ_ONLY)
+
+    Array("new", "tmp", "cur").foreach(new File(folderFile, _).exists() should equal(false))
+  }
+
+  "A MaildirFolder" should "not autorepair folders if flag is set to false" in {
+    val folderFile = new File(tempDir, ".foobar")
+
+    autoRepairTest(folderFile, "false", "foobar", Folder.READ_WRITE)
+
+    Array("new", "tmp", "cur").foreach(new File(folderFile, _).exists() should equal(false))
+  }
+
+  def autoRepairTest(folderFile: File, autorepairFlag: String, folderName: String, openFlags: Int) {
+    val folder = new MaildirFolder(folderName, store)
+    val props = new Properties()
+
+    props.setProperty("mail.store.maildir.autorepair", autorepairFlag)
+    when(store.sessionProperties).thenReturn(props)
+    folderFile.mkdirs()
+
+    folder.exists() should equal(true)
+    folder.open(openFlags)
+    folder.close(false)
+  }
+
+
   private def createFolder(name: String, store: MaildirJavaMailStore): MaildirFolder = {
     val folder = new MaildirFolder(name, store)
     folder.create(FolderFlags.DEFAULT.flags)

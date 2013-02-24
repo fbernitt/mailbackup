@@ -178,6 +178,10 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
     folder.renameTo(newName.asInstanceOf[MaildirFolder].folder)
   }
 
+  def autoRepair() {
+    List(newDir, curDir, tmpDir).foreach(_.mkdir())
+  }
+
   override def open(mode: Int) {
     if (!exists()) {
       throw new FolderNotFoundException(this, "a folder named " + getFullName + " does not exist!")
@@ -187,6 +191,11 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
     }
     this.mode = mode
 
+    if (isAutoRepairNecessary && !isReadOnly && isAutoRepair) {
+      autoRepair()
+    }
+
+
     opened = true
 
 
@@ -195,6 +204,10 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
       moveFromNewToCur()
     }
   }
+
+  private def isAutoRepairNecessary: Boolean = folder.exists() && (!curDir.exists() || !newDir.exists() || !tmpDir.exists())
+
+  private def isAutoRepair = store.sessionProperties.getProperty("mail.store.maildir.autorepair", "true").toBoolean
 
   private def reloadMessages() {
     val msgs = readMessages
@@ -221,6 +234,9 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
   private def isReadOnly: Boolean = (mode & Folder.READ_ONLY) > 0
 
   private def moveFromNewToCur() {
+    if (!newDir.exists() || !curDir.exists())
+      return
+
     val newMails = newDir.listFiles().toList
 
     newMails.foreach {
@@ -234,7 +250,7 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
   }
 
   private def readMessagesIn(dir: File, startMsgNum: Int): Array[MaildirMessage] = {
-    val files = dir.listFiles().toList
+    val files = if (dir.exists()) dir.listFiles().toList else List[File]()
 
     var msgNum = startMsgNum
     files.map {
@@ -282,7 +298,7 @@ class MaildirFolder(name: String, store: MaildirJavaMailStore, defaultFolder: Bo
   }
 
 
-  private def countMessagesIn(dir: File): Int = dir.listFiles().size
+  private def countMessagesIn(dir: File): Int = if (dir.exists()) dir.listFiles().size else 0
 
   override def getMessage(msgNum: Int): Message = {
     if (!exists()) {

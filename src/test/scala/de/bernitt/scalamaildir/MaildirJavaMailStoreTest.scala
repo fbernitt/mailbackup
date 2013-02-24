@@ -94,6 +94,13 @@ class MaildirJavaMailStoreTest extends FlatSpec with ShouldMatchers with Tempora
     folder.getName should equal("testFolder")
   }
 
+  "A MaildirJavaMailStore" should "provide its session properties" in {
+    val session = createSession()
+    val store = session.getStore(maildirUrl).asInstanceOf[MaildirJavaMailStore]
+
+    session.getProperties should equal(store.sessionProperties)
+  }
+
   private def maildirUrl: URLName = {
     new URLName("maildir:///" + tempDir.getAbsolutePath)
   }
