@@ -1,5 +1,6 @@
 mailbackup
 ==========
+[![Build Status](https://travis-ci.org/TheCodEx/mailbackup.png)](https://travis-ci.org/TheCodEx/mailbackup)
 
 A scala library and tool to backup remote IMAP accounts to a local Maildir.
 
